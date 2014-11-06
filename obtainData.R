@@ -20,13 +20,13 @@ writeSample <- function() {
 
 tokenizeFile <- function(filename) {
   file <- file(filename)
-  vs <- VectorSource(readChar(file, file.info(file)$size))
+  vs <- VectorSource(readChar(file, file.info(filename)$size))
     #vs <- VectorSource(readLines(file))
 
     corpus <- Corpus(vs)
 
-    tokenizer <- WordTokenizer
-      #function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+    tokenizer <- #WordTokenizer
+      function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
     tdm <- TermDocumentMatrix(corpus, control = list(tokenize = tokenizer,removePunctuation=T,remove_stopwords=T))
 }
 
@@ -47,4 +47,3 @@ plot(sapply(1:max(m),function(x) length(m[m>x,]) ))
 terms <- Terms(tdm)
 foreign1 <- setdiff(terms,GradyAugmented)
 foreign2 <- grep("[^ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]",terms,value=T)
-

@@ -1,5 +1,9 @@
 library(hash)
-
+library(dplyr)
+library(tm)
+library(RWeka)
+library(tau)
+library(qdapDictionaries)
 
 #download.file("http://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip","Coursera-SwiftKey.zip")
 #unzip("Coursera-SwiftKey.zip")
@@ -13,32 +17,34 @@ writeSample <- function() {
     close(con)
 }
 
-tokenizeLine <- function(line) {
-    words <- unlist(str_split(line,"[[:blank:]]|[[:punct:]]"))
-    words <- tolower(words)
-    words <-  Filter(function(word) nchar(word)>0, words)
+
+tokenizeFile <- function(filename) {
+  file <- file(filename)
+  vs <- VectorSource(readChar(file, file.info(file)$size))
+    #vs <- VectorSource(readLines(file))
+
+    corpus <- Corpus(vs)
+
+    tokenizer <- WordTokenizer
+      #function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+    tdm <- TermDocumentMatrix(corpus, control = list(tokenize = tokenizer,removePunctuation=T,remove_stopwords=T))
 }
-
-tokenize <- function(file) {
-   lapply(readLines(file),tokenizeLine)
-}
-
-
-countWords <- function(tokens) {
-    if (exists("wordcount")) rm(wordCounts)
-    wordCounts <- hash()
-    dummy <-sapply(unlist(linesTokenized),function(word) {
-        wordCounts[[word]] <- ifelse(is.null(wordCounts[[word]]),1,wordCounts[[word]] + 1)
-    })
-    wc <- data.frame(word=names(wordCounts),count=unname(unlist(as.list(wordCounts))))
-    rm(wordCounts)
-    wc
-}
-
 
 
 
 
 #writeSample()
-linesTokenized <-tokenize("en_US.twitter.100.txt")
-wc <- countWords(linesTokenized)
+tdm <-tokenizeFile("en_US.twitter.10000.txt")
+m <- as.matrix(tdm)
+
+numWords <- length(m)
+percent_unique <- length(m[m==1,]) / numWords
+
+plot(sapply(1:max(m),function(x) length(m[m>x,]) ))
+
+
+
+terms <- Terms(tdm)
+foreign1 <- setdiff(terms,GradyAugmented)
+foreign2 <- grep("[^ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]",terms,value=T)
+

@@ -26,7 +26,7 @@ tokenizeFile <- function(filename) {
     corpus <- Corpus(vs)
 
     tokenizer <- #WordTokenizer
-      function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+      function(x) NGramTokenizer(x, Weka_control(min = 1, max = 10))
     tdm <- TermDocumentMatrix(corpus, control = list(tokenize = tokenizer,removePunctuation=T,remove_stopwords=T))
 }
 

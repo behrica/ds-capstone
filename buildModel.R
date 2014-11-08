@@ -45,7 +45,8 @@ tokenizeFile <- function(filename) {
 buildModel <- function(tdm) {
 
     freqs <- row_sums(tdm)
-    terms <- str_trim(names(freqs))
+    terms <- remove_stopwords(str_trim(names(freqs)),words = c(""," "))
+
     name_pos <- hash(keys=terms,values = 1:length(terms))
 
 
@@ -53,7 +54,8 @@ buildModel <- function(tdm) {
 
     for(term in terms) {
 
-        words <- MC_tokenizer(term)
+        words <- remove_stopwords(tokenize(term)," ")
+        #print(words)
         l <- length(words)
         if (l<2)
             next

@@ -11,9 +11,11 @@ my.read.lines2=function(fname) {
  strsplit( buf,"\n",fixed=T,useBytes=T)[[1]]
 }
 
+lineCount <- 0
 
 tokenize_line <- function(line) {
-          #print(line)
+    lineCount <<- lineCount + 1
+
           ng1 <- get.ngrams(ngram(line,1))
           ng2 <- ng3 <- c()
           words <- length(ng1)
@@ -23,23 +25,37 @@ tokenize_line <- function(line) {
            ng3 <- get.ngrams(ngram(line,3))
          terms  <- c(ng1,ng2,ng3)
          if(rbinom(1,1,0.001)==1)
-             print(paste(Sys.time(),"#terms:",length(terms)))
-          #print(terms)
+             print(paste(Sys.time(),"#lc:",lineCount))
           terms
 }
 
 ngram_tokenizer <- function(x) {
-    text <- tolower(x)
-    text <- removePunctuation(text)
-    text <- removeNumbers(text)
-    text <- stripWhitespace(text)
-    text <- str_trim(text)
+    print(paste(Sys.time(),": start handle document: ",meta(x),"with lines: ",length(x$content)))
 
-      unlist(lapply(text,FUN = tokenize_line))
+     print(paste(Sys.time(),": tolower"))
+     text <- tolower(x)
+
+     print(paste(Sys.time(),": removePunctuation"))
+     text <- removePunctuation(text)
+
+     print(paste(Sys.time(),": removeNumbers"))
+     text <- removeNumbers(text)
+
+     print(paste(Sys.time(),": stripWhiteSpace"))
+     text <- stripWhitespace(text)
+
+     print(paste(Sys.time(),": trim"))
+     text <- str_trim(text)
+
+     print(paste(Sys.time(),": tokenize"))
+    unlist(lapply(text,FUN = tokenize_line))
 
   }
 
 tokenizeFile <- function(filename) {
+  print(paste(Sys.time(),": start"))
+
+  lineCount <<- 0
   vs <- URISource(paste0("file://",filename))
   corpus <- Corpus(vs)
   tdm <- TermDocumentMatrix(corpus, control = list(
@@ -47,10 +63,8 @@ tokenizeFile <- function(filename) {
                                         stopwords = c(""," "),
                                         wordLengths=c(1,Inf)
    ))
-  #tdm$dimnames$Terms <- stripWhitespace(str_trim(tdm$dimnames$Terms))
   tdm
-#  sums <- row_sums(tdm)
- #sums
+  hash(Terms(tdm),tdm$v)
 }
 
 
@@ -90,20 +104,21 @@ buildModel <- function(tdm) {
     dtcm
 }
 
-calculateProb <- function(tdm,phrase) {
-    words <- str_split_fixed(phrase," ",2)[1]
+calculateProb<- function(ngramCounts,phrase) {
+    words <- str_split(phrase," ")[[1]]
     prev <- words[2]
-    c_phrase <- tdm[which(Terms(tdm)==phrase),]$v
-    c_prev <- tdm[which(Terms(tdm)=="can"),]$v
+    c_phrase <- ngramCounts[[phrase]]
+    c_prev <- ngramCounts[[prev]]
     c_phrase / c_prev
 
 }
 
-predictNextWord <- function(tdm,words) {
-    m <- as.matrix(tdm[grep(paste0("^ ",words," (.*)"),Terms(tdm)),])
-    max.ind <-  which.max(m)
-    dimnames(m)$Terms[max.ind]
-
+predictNextWord <- function(ngramCounts,words) {
+    keys <- keys(ngramCounts)
+    matched <- grep(paste0("(^| )",words," (.*)"),keys,value = T)
+    matched.probs <- sapply(matched, function(x) calculateProb(ngramCounts,x))
+    max.ind <- which.max(matched.probs)
+    matched.probs[max.ind]
     #matches <- grep(paste0(phrase," .*"),names(sums))
     #matchedTerm <- names(which.max(sums[matches]))
     #regmatches(matchedTerm,regexec(paste0(".* |^",phrase," (.*)"),matchedTerm))

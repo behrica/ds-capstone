@@ -15,18 +15,20 @@ lineCount <- 0
 
 tokenize_line <- function(line) {
     lineCount <<- lineCount + 1
+    if (line=="")
+        return("")
 
-          ng1 <- get.ngrams(ngram(line,1))
-          ng2 <- ng3 <- c()
-          words <- length(ng1)
-          if (words >=2)
-            ng2 <- get.ngrams(ngram(line,2))
-          if (words >=3)
-           ng3 <- get.ngrams(ngram(line,3))
-         terms  <- c(ng1,ng2,ng3)
-         if(rbinom(1,1,0.001)==1)
-             print(paste(Sys.time(),"#lc:",lineCount))
-          terms
+    ng1 <- get.ngrams(ngram(line,1))
+    ng2 <- ng3 <- c()
+    words <- length(ng1)
+    if (words >=2)
+        ng2 <- get.ngrams(ngram(line,2))
+    if (words >=3)
+        ng3 <- get.ngrams(ngram(line,3))
+    terms  <- c(ng1,ng2,ng3)
+    if(rbinom(1,1,0.001)==1)
+        print(paste(Sys.time(),"#lc:",lineCount))
+    terms
 }
 
 ngram_tokenizer <- function(x) {
@@ -63,7 +65,7 @@ tokenizeFile <- function(filename) {
                                         stopwords = c(""," "),
                                         wordLengths=c(1,Inf)
    ))
-  tdm
+  # tdm
   hash(Terms(tdm),tdm$v)
 }
 

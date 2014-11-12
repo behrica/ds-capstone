@@ -14,23 +14,28 @@ output:
   html_document:
     theme: cerulean
 ---
-
-```{r echo=FALSE,results='hide'}
+```{r echo=FALSE}
+library(pander)
 library(data.table)
 library(tau)
 library(ngram)
+```
+
+
+
+```{r cache=TRUE,echo=FALSE,result=FALSE}
 
 my.read.lines2=function(fname) {
   s = file.info( fname )$size
-  #s = 20000000
-  s=20000
+  s = 20000000
+  #s=20000
   
   buf = readChar( fname, s)
   lines <- strsplit(buf,"\n",fixed=T)[[1]]
 }
 
 extractNgrams <- function(x,n) {
-  textcnt(x,n=n,verbose = T,method = "string",decreasing = T)
+  textcnt(x,n=n,method = "string",decreasing = T)
 }
 
 extractCounts <- function(files) {
@@ -45,6 +50,9 @@ extractCounts <- function(files) {
   }
   results
 }
+
+results <- extractCounts(c("final//en_US/en_US.blogs.txt","final//en_US/en_US.news.txt","final//en_US/en_US.twitter.txt"))
+
 
 ```
 
@@ -115,59 +123,31 @@ The generation of the ngram tables for ~ 60 MB (3 * 20M) took only some minutes 
  
 Those numbers were obtained by using the "textcnt" functions from R-package "tau" on 10% of the text.
 
-```{r cache=T,echo=FALSE,results='hide'}
-results <- extractCounts(c("final//en_US/en_US.blogs.txt","final//en_US/en_US.news.txt","final//en_US/en_US.twitter.txt"))
-```
 
 The results object has a size of `r format(object.size(results),units="b")`
 
-
-file name             # 1-grams     # 2-grams      # 3-grams     #4-grams       # words
----------             ---------     ---------      ----------    ---------     --------
-en_US.blogs.txt       98.181         1.176.754     2.640.364     3.361.857      3.608.386
-en_US.news.txt        85.845         1.186.537     2.556.828     3.159.272      3.372.546 
-en_US.twitter.txt     72.119         788.090       1.623.808     2.010.617      2.164.439
-
+```{r results='asis',echo=FALSE}
+fileNames <- names(results)
+ng1.count <- sapply(fileNames,FUN=function(fileName) length(results[[fileName]][[1]]),USE.NAMES = F)
+ng2.count <- sapply(fileNames,FUN=function(fileName) length(results[[fileName]][[2]]),USE.NAMES = F)
+ng3.count <- sapply(fileNames,FUN=function(fileName) length(results[[fileName]][[3]]),USE.NAMES = F)
+ng4.count <- sapply(fileNames,FUN=function(fileName) length(results[[fileName]][[4]]),USE.NAMES = F)
+df <- data.frame("file name"=c("blogs","news","twitter"),"gram.1"=ng1.count,"gram.2"=ng2.count,"gram.3"=ng3.count,"grams.4"=ng4.count)
+pandoc.table(df,caption="N-gram counts",style="simple")
+```
 
 This table shows, that the Twitter text has the least number of different n-grams, so the most reduced vocabulary.
 
 ## most frequent words
 
 
- &nbsp;    frq    rank 
---------- ------ ------
- **the**  177660 98181 
- **and**  104478 98180 
- **to**   102302 98179 
-  **a**   86438  98178 
- **of**   83764  98177 
-  **i**   81180  98176 
 
-Table: Most frequent words in 'blogs'
+```{r results='asis',echo=FALSE}
+pandoc.table(head(format(results[[1]][[1]])[,1:2]),caption="Most frequent words in 'blogs'",style="simple")
+pandoc.table(head(format(results[[2]][[1]])[,1:2]),caption="Most frequent words in 'news'",style="simple")
+pandoc.table(head(format(results[[3]][[1]])[,1:2]),caption="Most frequent words in 'twitter'",style="simple")
 
-
-&nbsp;    frq    rank 
---------- ------ ------
- **the**  191417 85845 
- **to**   88208  85844 
-  **a**   86844  85843 
- **and**  86756  85842 
- **of**   75016  85841 
- **in**   65662  85840 
-
-Table: Most frequent words in 'news'
-
-
-&nbsp;    frq   rank 
---------- ----- ------
- **the**  66509 72119 
-  **i**   65121 72118 
- **to**   55672 72117 
-  **a**   43579 72116 
- **you**  42282 72115 
- **and**  30927 72114 
-
-Table: Most frequent words in 'twitter'
+```
 
 
 
@@ -193,7 +173,24 @@ This algorithm does not take the context apart from the previous words into cons
 
 A very important consideration is as well, which n-grams(n=1,2,3,4....) should be saved. As larger the "n" gets, as less "predictive power" each n gram has, because it is less likely that it will ever be used for prediction and the number of potential n-grams increases exponentially per "n".
 
-A further question is, if "low" counts (0,1,2 ...) should be stored at all.  If a-ngram is very unlikely to occur in training text, it is unlikely that user will ever want to type it.
+A further question is, if "low" counts (0,1,2 ...) should be stored at all ?  If a-ngram is very unlikely to occur in training text, it is unlikely that user will ever want to type it. A very large number of n-grams ocur only ones.
+For example, the percentage of bigrams with count=2 in blogs is 
+```{r echo=FALSE}
+blogs_2Grams <- results[[1]][[2]]
+length(blogs_2Grams[blogs_2Grams==1]) / length(blogs_2Grams)
+```
+
+
+
+This is seen as well in the following plot. It plots teh cumualted sum of occurencies versus teh number of terms for the "blogs" and teh bigrams:
+```{r cache=TRUE,echo=FALSE}
+ occurencies <- sum(results[[1]][[2]])
+ plot(cumsum(results[[1]][[2]])/occurencies,xlab="rank",ylab="cumulative sum of occurencies")
+```
+
+So by storing only about 200.000 out of 1.200.000 bigrams, we get already a 75% coverage on the training text
+For hihern "n" this gets worse, so we need more and more storage to get high coverage.
+
 
 So in summary, we have those parameters to tune the process:
 
@@ -202,12 +199,12 @@ For building the frequency table:
 - corpus size used for building the frequency table
 - which ngrams to extract and store (,2,3,4 ...) ?
 - which frequencies to include in table (> 3 ) ?
+. use more context the n-grams ?
 
 
 For using the frequency table:
 
 - effective search in the table (avoid full text scan, if possible, by using a kind of tree) 
-
 
 
 

@@ -1,0 +1,77 @@
+# Purpose of Report
+The purpose of this report is to give some characteristics of the data used for building a prediction model and application for the prediction of words.
+
+# Description of dataset
+
+## Structure of text corpus files
+The input data for the prediction algorithm is a corpus of text, split in several files, which can be downloaded here:
+
+https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip
+
+The files contains 3 text files for each of the four languages:
+
+
+* en_US : English
+* fi_FI : Finish
+* de_DE : German
+* ru_RU : Russian
+
+
+For the purpose of this report we will concentrate on English.
+
+
+The following table shows some characteristics of the size of the 3 English files:
+
+file name             size in bytes      number of lines     number of words
+---------             ------             ----------          ----------
+en_US.blogs.txt       210.160.014           899.288          37.334.114
+en_US.news.txt        205.811.889         1.010.242          34.365.936
+en_US.twitter.txt     167.105.338         2.360.148          30.359.852
+ 
+This data was obtained by running teh Linux tool "wc" on the files. 
+ 
+From this we can calculate the number of words per line, which is rather different between the files.
+
+file name             avg. words per line      
+---------             ---------            
+en_US.blogs.txt       41
+en_US.news.txt        34
+en_US.twitter.txt     12
+
+This matches the intuition, that twitter messages are very short, new and blogs are longer.
+
+ 
+## Ngrams
+ The next table shows the number of n-grams in the 3 different files.
+ 
+ I tried several R packages for extracting n-grams from the complete files:
+ - NgramTokenizer (package "RWeka")
+ - textcnt (package "tau")
+ - ngram (package "ngram" : https://github.com/wrathematics/ngram)
+ 
+ All of my trials to tokenize(or extract ngrams) with the full files in R, even by using several strategies of splitting the text in blocks of lines, failed with memory problems.
+ (On a 8 GB Ram server from Amazon EC2)
+ 
+ The only tool I found, which reliable could generate n-grams from the full files, was "ngramtools" , a coomand line application available here:
+ http://homepages.inf.ed.ac.uk/lzhang10/ngram.html
+ 
+ 
+So finally I restricted the n-gram analysis to the first 200.000 lines per file.
+This represents xx percent of the full file.
+ 
+ 
+ 
+Those numbers were obtained by using the "textcnt" functions from R-package "tau":
+
+file name             # 1-grams     # 2-grams      # 3-grams     #4-grams  
+---------             ---------            
+en_US.blogs.txt       98.181         1.176.754     2.640.364     3.361.857
+en_US.news.txt        85.845         1.186.537     2.556.828     3.159.272
+en_US.twitter.txt     72.119         788.090       1.623.808     2.010.617
+
+
+This table shows, that the Twitter text has the least number of different n-grams, so the most reduced vocabulary.
+
+## most frequent words
+
+

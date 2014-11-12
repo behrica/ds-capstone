@@ -1,3 +1,55 @@
+<style type="text/css">
+.table {
+   width: auto;
+   max-width: none;
+   border: 1px solid #ccc;
+}
+ 
+</style>
+
+
+---
+title: "Milestone report"
+output:
+  html_document:
+    theme: cerulean
+---
+
+```{r echo=FALSE,results='hide'}
+library(data.table)
+library(tau)
+library(ngram)
+
+my.read.lines2=function(fname) {
+  s = file.info( fname )$size
+  #s = 20000000
+  s=20000
+  
+  buf = readChar( fname, s)
+  lines <- strsplit(buf,"\n",fixed=T)[[1]]
+}
+
+extractNgrams <- function(x,n) {
+  textcnt(x,n=n,verbose = T,method = "string",decreasing = T)
+}
+
+extractCounts <- function(files) {
+  results = list()
+  for (file in files) {
+    text <- my.read.lines2(file)
+    cnt_1 <- extractNgrams(text,1)
+    cnt_2 <- extractNgrams(text,2)
+    cnt_3 <- extractNgrams(text,3)
+    cnt_4 <- extractNgrams(text,4)    
+    results[[file]] <- list(gram1 = cnt_1,gram2=cnt_2,gram3=cnt_3,gram4=cnt_4)
+  }
+  results
+}
+
+```
+
+
+
 # Purpose of Report
 The purpose of this report is to give some characteristics of the data used for building a prediction model and application for the prediction of words.
 
@@ -28,7 +80,7 @@ en_US.blogs.txt       210.160.014           899.288          37.334.114
 en_US.news.txt        205.811.889         1.010.242          34.365.936
 en_US.twitter.txt     167.105.338         2.360.148          30.359.852
  
-This data was obtained by running teh Linux tool "wc" on the files. 
+This data was obtained by running the Linux tool "wc" on the files. 
  
 From this we can calculate the number of words per line, which is rather different between the files.
 
@@ -52,26 +104,121 @@ This matches the intuition, that twitter messages are very short, new and blogs 
  All of my trials to tokenize(or extract ngrams) with the full files in R, even by using several strategies of splitting the text in blocks of lines, failed with memory problems.
  (On a 8 GB Ram server from Amazon EC2)
  
- The only tool I found, which reliable could generate n-grams from the full files, was "ngramtools" , a coomand line application available here:
+ The only tool I found, which reliable could generate n-grams from the full files, was "ngramtools" , a command line application available here:
  http://homepages.inf.ed.ac.uk/lzhang10/ngram.html
  
  
-So finally I restricted the n-gram analysis to the first 200.000 lines per file.
-This represents xx percent of the full file.
+So finally I restricted the n-gram analysis to the first 20.000.000 bytes per file and ngrams of length 1,2,3 and 4.
+This represents roughly 10% percent of the full text corpus.
+The generation of the ngram tables for ~ 60 MB (3 * 20M) took only some minutes and generated a 1.4 GB  n-gram frequency table
  
  
- 
-Those numbers were obtained by using the "textcnt" functions from R-package "tau":
+Those numbers were obtained by using the "textcnt" functions from R-package "tau" on 10% of the text.
 
-file name             # 1-grams     # 2-grams      # 3-grams     #4-grams  
----------             ---------            
-en_US.blogs.txt       98.181         1.176.754     2.640.364     3.361.857
-en_US.news.txt        85.845         1.186.537     2.556.828     3.159.272
-en_US.twitter.txt     72.119         788.090       1.623.808     2.010.617
+```{r cache=T,echo=FALSE,results='hide'}
+results <- extractCounts(c("final//en_US/en_US.blogs.txt","final//en_US/en_US.news.txt","final//en_US/en_US.twitter.txt"))
+```
+
+The results object has a size of `r format(object.size(results),units="b")`
+
+
+file name             # 1-grams     # 2-grams      # 3-grams     #4-grams       # words
+---------             ---------     ---------      ----------    ---------     --------
+en_US.blogs.txt       98.181         1.176.754     2.640.364     3.361.857      3.608.386
+en_US.news.txt        85.845         1.186.537     2.556.828     3.159.272      3.372.546 
+en_US.twitter.txt     72.119         788.090       1.623.808     2.010.617      2.164.439
 
 
 This table shows, that the Twitter text has the least number of different n-grams, so the most reduced vocabulary.
 
 ## most frequent words
+
+
+ &nbsp;    frq    rank 
+--------- ------ ------
+ **the**  177660 98181 
+ **and**  104478 98180 
+ **to**   102302 98179 
+  **a**   86438  98178 
+ **of**   83764  98177 
+  **i**   81180  98176 
+
+Table: Most frequent words in 'blogs'
+
+
+&nbsp;    frq    rank 
+--------- ------ ------
+ **the**  191417 85845 
+ **to**   88208  85844 
+  **a**   86844  85843 
+ **and**  86756  85842 
+ **of**   75016  85841 
+ **in**   65662  85840 
+
+Table: Most frequent words in 'news'
+
+
+&nbsp;    frq   rank 
+--------- ----- ------
+ **the**  66509 72119 
+  **i**   65121 72118 
+ **to**   55672 72117 
+  **a**   43579 72116 
+ **you**  42282 72115 
+ **and**  30927 72114 
+
+Table: Most frequent words in 'twitter'
+
+
+
+An interesting difference is here, is that in the twitter text "I" and "you" is higher ranking.
+This reflect the nature of personal messages in Twitter tweets.
+
+## Prediction model
+It became clear, that a trade-of need to be made between the computation time/memory consumption for creating the model and versus prediction accuracy need to be made.
+
+The "principle" of the prediction algorithm to be implemented can look like this:
+
+1. Given a frequency table of n-grams, which lists per n-gram the counts (or probability)
+2. Given a "n-gram" x of length "m" for which the next word "y"" should be predicted
+3. Find counts in frequency table of all n-grams of length m-1 where the first words match with x
+4. If found in table, select the one with highest count and use as predicted next word "y"
+5. If none found in step 3, -> "step back" and reduce m by one (from the left) and go to step 3
+6. If none found, use word "the" as prediction(as it is overall the most frequent word in English language)
+
+As more complete our frequency table is, as more reliable the prediction would be.
+
+This algorithm does not take the context apart from the previous words into consideration.
+
+
+A very important consideration is as well, which n-grams(n=1,2,3,4....) should be saved. As larger the "n" gets, as less "predictive power" each n gram has, because it is less likely that it will ever be used for prediction and the number of potential n-grams increases exponentially per "n".
+
+A further question is, if "low" counts (0,1,2 ...) should be stored at all.  If a-ngram is very unlikely to occur in training text, it is unlikely that user will ever want to type it.
+
+So in summary, we have those parameters to tune the process:
+
+For building the frequency table:
+
+- corpus size used for building the frequency table
+- which ngrams to extract and store (,2,3,4 ...) ?
+- which frequencies to include in table (> 3 ) ?
+
+
+For using the frequency table:
+
+- effective search in the table (avoid full text scan, if possible, by using a kind of tree) 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

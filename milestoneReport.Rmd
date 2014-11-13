@@ -59,7 +59,7 @@ results <- extractCounts(c("final//en_US/en_US.blogs.txt","final//en_US/en_US.ne
 
 
 # Purpose of Report
-The purpose of this report is to give some characteristics of the data used for building a prediction model and application for the prediction of words.
+The purpose of this report is to give some characteristics of the data used for building a prediction model and application for the prediction of words in a phrase.
 
 # Description of dataset
 
@@ -101,7 +101,7 @@ en_US.twitter.txt     12
 This matches the intuition, that twitter messages are very short, new and blogs are longer.
 
  
-## Ngrams
+## n-gram distribution
  The next table shows the number of n-grams in the 3 different files.
  
  I tried several R packages for extracting n-grams from the complete files:
@@ -109,8 +109,8 @@ This matches the intuition, that twitter messages are very short, new and blogs 
  - textcnt (package "tau")
  - ngram (package "ngram" : https://github.com/wrathematics/ngram)
  
- All of my trials to tokenize(or extract ngrams) with the full files in R, even by using several strategies of splitting the text in blocks of lines, failed with memory problems.
- (On a 8 GB Ram server from Amazon EC2)
+ All of my trials to tokenize(or extract n-grams) with the full files in R, even by using several strategies of splitting the text in blocks of lines, failed with memory problems.
+ (On a 8 GB Ram server on Amazon EC2)
  
  The only tool I found, which reliable could generate n-grams from the full files, was "ngramtools" , a command line application available here:
  http://homepages.inf.ed.ac.uk/lzhang10/ngram.html
@@ -118,13 +118,13 @@ This matches the intuition, that twitter messages are very short, new and blogs 
  
 So finally I restricted the n-gram analysis to the first 20.000.000 bytes per file and ngrams of length 1,2,3 and 4.
 This represents roughly 10% percent of the full text corpus.
-The generation of the ngram tables for ~ 60 MB (3 * 20M) took only some minutes and generated a 1.4 GB  n-gram frequency table
- 
- 
-Those numbers were obtained by using the "textcnt" functions from R-package "tau" on 10% of the text.
+The generation of the ngram tables for ~ 60 MB (3 * 20M) took only some minutes and generated a large  n-gram frequency table. The results object in R has a size of `r format(object.size(results),units="GB")`
+
+The following counts were obtained by using the "textcnt" functions from R-package "tau" on 10% of the text. 
+
+I think the general tendencies on the distribution of words and n-grams in this sample are similar to the properties of the full corpus.
 
 
-The results object has a size of `r format(object.size(results),units="b")`
 
 ```{r results='asis',echo=FALSE}
 fileNames <- names(results)
@@ -136,7 +136,9 @@ df <- data.frame("file name"=c("blogs","news","twitter"),"gram.1"=ng1.count,"gra
 pandoc.table(df,caption="N-gram counts",style="simple")
 ```
 
-This table shows, that the Twitter text has the least number of different n-grams, so the most reduced vocabulary.
+The most frequent words in each text match the distribution of english text in general, as listed here: http://en.wikipedia.org/wiki/Most_common_words_in_English:
+
+The Twitter text has the least number of different n-grams, so the most reduced vocabulary.
 
 ## most frequent words
 
@@ -151,7 +153,7 @@ pandoc.table(head(format(results[[3]][[1]])[,1:2]),caption="Most frequent words 
 
 
 
-An interesting difference is here, is that in the twitter text "I" and "you" is higher ranking.
+An interesting difference is here, is that in the twitter text "I" and "you" is higher ranking then in "blogs" and "news".
 This reflect the nature of personal messages in Twitter tweets.
 
 ## Prediction model
@@ -173,45 +175,54 @@ This algorithm does not take the context apart from the previous words into cons
 
 A very important consideration is as well, which n-grams(n=1,2,3,4....) should be saved. As larger the "n" gets, as less "predictive power" each n gram has, because it is less likely that it will ever be used for prediction and the number of potential n-grams increases exponentially per "n".
 
-A further question is, if "low" counts (0,1,2 ...) should be stored at all ?  If a-ngram is very unlikely to occur in training text, it is unlikely that user will ever want to type it. A very large number of n-grams ocur only ones.
-For example, the percentage of bigrams with count=2 in blogs is 
+A further question is, if "low" counts (0,1,2 ...) should be stored at all ?  If a n-gram is very unlikely to occur in training text, it is unlikely that user will ever want to type it. A very large number of n-grams occur only ones.
+For example, the percentage of bi-grams with count=1 in "blogs" is 
 ```{r echo=FALSE}
 blogs_2Grams <- results[[1]][[2]]
 length(blogs_2Grams[blogs_2Grams==1]) / length(blogs_2Grams)
 ```
 
+So by removing bi-grams with occurrence of "1" the bi-gram table would be reduced to about 25% of its current size.
 
 
-This is seen as well in the following plot. It plots teh cumualted sum of occurencies versus teh number of terms for the "blogs" and teh bigrams:
+This is seen as well in the following plot. It plots the accumulated sum of occurrences versus the number of terms for the "blogs" and the bi-grams:
 ```{r cache=TRUE,echo=FALSE}
  occurencies <- sum(results[[1]][[2]])
  plot(cumsum(results[[1]][[2]])/occurencies,xlab="rank",ylab="cumulative sum of occurencies")
 ```
 
-So by storing only about 200.000 out of 1.200.000 bigrams, we get already a 75% coverage on the training text
-For hihern "n" this gets worse, so we need more and more storage to get high coverage.
+So by storing only about 200.000 out of 1.200.000 bi-grams, we get already a 75% coverage on the training text.
+For higher "n" this line gets more linear, so we need more and more storage to get high coverage. This is backed-up by the observation, that larger n-grams are less likely to occur.
 
 
 So in summary, we have those parameters to tune the process:
 
 For building the frequency table:
 
-- corpus size used for building the frequency table
-- which ngrams to extract and store (,2,3,4 ...) ?
-- which frequencies to include in table (> 3 ) ?
-. use more context the n-grams ?
+1. corpus size used for building the frequency table
+2. which ngrams to extract and store (,2,3,4 ...) ?
+3. which frequencies to include in table (> 3 ) ?
+4. use more context the n-grams ?
 
 
 For using the frequency table:
 
 - effective search in the table (avoid full text scan, if possible, by using a kind of tree) 
 
+## Shiny App
+A potential usage in a Shinny app would be a simple text entry where, the user types some words, and the application provides him with the most likely next word.
 
+A possible extension could be to let the user select among the most likely words.
 
+"most likely" would mean "highest ranking" an frequency table in its simplest form.
 
+The key observation for the app regarding performance would be the following:
 
-
-
+- Parsing the raw corpus in the application is not possible, because it needs to much time and memory
+- The input data on the application needed to be a kind of look-up table, which has n-grams and a probability / count
+- The table should not be too large and saved / loaded in a efficient format. (as an R object or eventually as a compressed csv file )
+- Doing full text search (with "grep") on that table could be too slow and seen as too much waiting time for the user.
+- eventually an other data structure, optimized for text look up should be used. (Binary tree ?)
 
 
 

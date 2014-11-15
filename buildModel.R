@@ -1,9 +1,13 @@
+
 library(tm)
 library(stringr)
 library(markovchain)
 library(ngram)
 library(slam)
 library(hash)
+
+
+tokenize_ngrams <- function(x, n=3) return(rownames(as.data.frame(unclass(textcnt(x,method="string",n=n)))))
 
 my.read.lines2=function(fname) {
  s = file.info( fname )$size
@@ -62,6 +66,7 @@ tokenizeFile <- function(filename) {
   vs <- URISource(paste0("file://",filename))
   corpus <- Corpus(vs)
   tdm <- TermDocumentMatrix(corpus, control = list(
+    bounds=list(global=c(2,Inf)),
                                         tokenize = ngram_tokenizer,
                                         stopwords = c(""," "),
                                         wordLengths=c(1,Inf)

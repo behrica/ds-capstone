@@ -57,8 +57,17 @@ counts <- row_sums(tdm)
 dt <- as.data.table(names(counts))
 dts <- cSplit(dt,"V1"," ")
 dts$count <- unname(counts)
-setnames(dts,c("t1","t2","t3","t4","count"))
+setnames(dts,c("t1","t2","t3","t4","t5","count"))
 rm(dt,counts)
+setkeyv(dts,c("t1","t2","t3","t4","t5"))
+
+# predict
+match <- (dts[list("i","want")])[is.na(t4)]
+match[order(count,decreasing = T)][2]
+
+# predict
+match <- (dts[list("my","name","is")])[is.na(t5)]
+match[order(count,decreasing = T)][2]
 
 
 

@@ -54,14 +54,14 @@ sum.hash <- hash(terms)
   sort(rowSums(as.matrix(tdm[matches,])),decreasing = T)[1]
 }
 
-# <<TermDocumentMatrix (terms: 4128659, documents: 100)  n=1,2,3,4   size =710M .local.bounds(1,Inf)  #docs = 4772
-# <<TermDocumentMatrix (terms: 44905127, documents: 4272) n=3 size 4.4 GB .local.bounds(1,Inf) #docs = 4772
-# <<TermDocumentMatrix (terms: 333810, documents: 4272)>> n=3, .local.bounds(2,Inf)  #docs = 4772
-# <<TermDocumentMatrix (terms: 482749, documents: 4272)>> n=3,4 .local.bounds(2,Inf)  #docs = 4772
-# <<TermDocumentMatrix (terms: 540961, documents: 4272)>>  n = 3,4,5 .local.bounds(2,Inf) #docs = 4772
-# <<TermDocumentMatrix (terms: 15743504, documents: 4272)>> n=2   .local.bounds(1,Inf) #docs = 4772
-# <<TermDocumentMatrix (terms: 51103022, documents: 99)>>   n=2,3 size=4.8 G .local. c(1,Inf) #docs = 100
-
+# <<TermDocumentMatrix (terms: 4128659, documents: 100)  n=1,2,3,4   size =710M .local.bounds(1,Inf)  #
+# <<TermDocumentMatrix (terms: 44905127, documents: 4272) n=3 size 4.4 GB .local.bounds(1,Inf) 
+# <<TermDocumentMatrix (terms: 333810, documents: 4272)>> n=3, .local.bounds(2,Inf)  
+# <<TermDocumentMatrix (terms: 482749, documents: 4272)>> n=3,4 .local.bounds(2,Inf)  
+# <<TermDocumentMatrix (terms: 540961, documents: 4272)>>  n = 3,4,5 .local.bounds(2,Inf) 
+# <<TermDocumentMatrix (terms: 15743504, documents: 4272)>> n=2   .local.bounds(1,Inf) 
+# <<TermDocumentMatrix (terms: 51103022, documents: 99)>>   n=2,3 size=4.8 G .local. c(1,Inf) 
+# <<TermDocumentMatrix (terms: 3390046, documents: 99)>>  n=2,3,4,5 size=500 M
 findTerms <- function(tdm,prefix) {
   terms <- row_sums(tdm)
   data.frame(count=sort(terms[grep(prefix,names(terms),value=F)],decreasing = T))

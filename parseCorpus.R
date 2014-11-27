@@ -5,25 +5,33 @@ library(quanteda)
 library(splitstackshape)
 library(slam)
 
-numberOfSplits <- 100
+numberOfSplits <- 10
 maxN <- 5
-ngrams <- c(1,2,3,4,maxN)
-tdm.local.bound <- c(2,Inf)
-column.names <- c()
-for (i in 1:maxN) {
-   column.names <- c(column.names,paste0("t",i))  
-}
+ngrams <- 1:maxN
+tdm.local.bounds <- c(2,Inf)
+tdm.global.bounds <- c(1,Inf)
+options(mc.cores=8)
 
-#---------------------
 
 splitsPerFile <- round(numberOfSplits / 3)
 dirName <- paste0("f-",numberOfSplits)
 textDir <- paste0("/data/",dirName)
+column.names <- c()
+for (i in 1:1000) {
+  column.names <- c(column.names,paste0("t",i))  
+}
+
+
+
+
+
+LOG <- function(...)  {
+  cat(paste(Sys.time())," : ",...,"\n",file="progress.log",append = T) 
+}
 
 
 my_tokenize <- function(x) {
-  writeLines(paste(x$meta$id," / ",splitsPerFile),con)
-  flush(con)
+  LOG(paste(x$meta$id," / ",splitsPerFile))
   terms <- c()
   for (ngram in ngrams) {
     ng <- make.ngrams(txt.to.words(x),ngram)
@@ -32,10 +40,12 @@ my_tokenize <- function(x) {
   terms
 }
 
-#con <- file("progress.log","w")
-#close(con)
+
+
 
 splitFiles <- function() {
+  LOG("split files")
+  
   system(paste0("rm -rf /data/",dirName))
   system(paste0("mkdir /data/",dirName))
   system(paste0("cat /data/final/en_US/en_US.blogs.txt  | split -n r/",splitsPerFile,"  -d - /data/",dirName,"/blogs"))
@@ -44,71 +54,57 @@ splitFiles <- function() {
 }
 
 createCorpus <- function(pattern="*") {
-  options(mc.cores=4)
+  LOG("create corpus")
+  
   corpus <- Corpus(DirSource(textDir, encoding="UTF-8",pattern=pattern), readerControl = list(language="en_US"))
+  cleanCorpus(corpus)
+}
+
+cleanCorpus <- function(corpus) {
+  LOG("clean corpus")
+  LOG("remove punctation")
   corpus <- tm_map(corpus,removePunctuation)
+  LOG("remove numbers")
   corpus <- tm_map(corpus,removeNumbers)
+  LOG("remove non-ascii")
   (f <- content_transformer(function(x) str_replace_all(x,"[^ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz]", " ")))
   corpus <- tm_map(corpus, f)
+  LOG("remove whitespace")
   corpus <- tm_map(corpus,stripWhitespace)
+  LOG("fix encoding")
   (g <- content_transformer(function(x) iconv(enc2utf8(x), sub = "byte")))
   corpus <- tm_map(corpus, g)
+  LOG("transform tolower")
   corpus <- tm_map(corpus, content_transformer(tolower))
   corpus   
 }
 
 
 createTdm <- function(corpus) {
-  options(mc.cores=4)
-  tdm <- TermDocumentMatrix(corpus,control=list(tokenize=my_tokenize,tolower=F,bounds=list(local=tdm.local.bound),wordLengths=c(1,Inf)))
+  LOG("create tdm")
+  tdm <- TermDocumentMatrix(corpus,control=list(tokenize=my_tokenize,tolower=F,
+                                                bounds=list(local=tdm.local.bounds,global=tdm.global.bounds),
+                                                wordLengths=c(1,Inf)))
   tdm  
 }
 
 
 createDT <- function(tdm) {
+  LOG("create DT")
   counts <- row_sums(tdm)
   dt <- data.table(names(counts))
+  LOG("create DTS")
   dts <- cSplit(dt,"V1"," ")
   dts$count <- unname(counts)
-  setnames(dts,c("t1","t2","t3","t4","t5","count"))
+  setnames(dts,c(column.names[1:maxN],"count"))
   rm(dt,counts)
+  gc()
   
   for (i in seq_along(dts)) { 
     set(dts, i=which(is.na(dts[[i]])), j=i, value="")
   }
-  setkeyv(dts,c("t1","t2","t3","t4","t5"))
+  setkeyv(dts,column.names[1:maxN])
   dts
 }
 
   
-calcProbSingle <- function(dts,words) {
-  words.padded <- c(words,rep("",100))[1:maxN]
-  matched <- dts[as.list(words.padded),nomatch=0]
-  count.phrase <- matched$count
-  
-  words <- words[-1]
-  words.padded <- c(words,rep("",100))[1:maxN]
-  
-  
-  matched <- dts[as.list(words.padded),nomatch=0]
-  count.phrase_1 <- matched$count  
-  #if (is.na(count.phrase) | is.na(count.phrase_1)) 
-    #0
-  if (length(count.phrase) == 0 | length(count.phrase_1) == 0)
-    return(0)
-  count.phrase / count.phrase_1  
-}
-
-calcProb <- function(dts,phrase) {
-  words <- tokenize(phrase,simplify=T)
-  words <- words[max(1,(length(words)-maxN+1)):length(words)]
-  
-  while(TRUE) {
-    print(words)
-    prob <- calcProbSingle(dts,words)
-    words <- words[-1]
-    if (prob > 0 | length(words)==0)
-      return(prob)
-  }
-  
-}

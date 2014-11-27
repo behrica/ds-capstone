@@ -1,0 +1,28 @@
+---
+title: "finalReport"
+output: html_document
+---
+
+# <<TermDocumentMatrix (terms: 4128659, documents: 100)  n=1,2,3,4   size =710M .local.bounds(1,Inf)  #
+# <<TermDocumentMatrix (terms: 44905127, documents: 4272) n=3 size 4.4 GB .local.bounds(1,Inf) 
+# <<TermDocumentMatrix (terms: 333810, documents: 4272)>> n=3, .local.bounds(2,Inf)  
+# <<TermDocumentMatrix (terms: 482749, documents: 4272)>> n=3,4 .local.bounds(2,Inf)  
+# <<TermDocumentMatrix (terms: 540961, documents: 4272)>>  n = 3,4,5 .local.bounds(2,Inf) 
+# <<TermDocumentMatrix (terms: 15743504, documents: 4272)>> n=2   .local.bounds(1,Inf) 
+# <<TermDocumentMatrix (terms: 51103022, documents: 99)>>   n=2,3 size=4.8 G .local. c(1,Inf) 
+# <<TermDocumentMatrix (terms: 3390046, documents: 99)>>  n=2,3,4,5 size=500 M
+
+
+#
+performace baseline
+
+
+  
+text  | split | n-grams | local bounds | global bounds | size DT (MB) | #ngrams  | accuracy (1000) | accuracy(62213) | time for prediction (ms)
+----- | ----- | ------- | ------------ | ------------- | ------------ | -------- | --------------- | --------------- | ------------------------
+all   |  100  | 1:5     |  2:Inf       |   2:Inf       |  111.2       | 3538272  |  15.3223        |   13            |  56.33453
+all   |  100  | 1:5     |  2:Inf       |   3:Inf       |  59.3        | 1596721  |  15.8833        |                 |  57.31927  
+all   |  100  | 1:5     |  2:Inf       |   4:Inf       |  56.9        | 1506037  |  15.7914        |                 |  57.18853  
+all   | 1000  | 1:5     |  2:Inf       |   2:Inf       |  50.7        | 1447560  |  14.8900        |                 |  47.41283
+all   | 10    | 1:5     |  2:Inf       |   2:Inf       |              |          |                 |                 |  
+  

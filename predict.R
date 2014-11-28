@@ -8,6 +8,7 @@ for (i in 1:1000) {
 }
 
 predictNextFromWords <- function(dts,words) {
+  words <- tail(words,ncol(dts)-2)
   by <- column.names[min(ncol(dts)-1,length(words)+1)]
   allMatches <- dts[as.list(words),j=sum(count),by=by]
   allMatches <- allMatches[ allMatches[[by]] !="" ,]
@@ -28,6 +29,5 @@ predictNext <- function(dts,phrase) {
   words <- tokenize(phrase)
   words <- str_trim(words)
   words <- words[words!=""]
-  words <- tail(words,ncol(dts)-2)
   predictNextFromWords(dts,words)
 }

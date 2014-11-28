@@ -5,10 +5,10 @@ library(quanteda)
 library(splitstackshape)
 library(slam)
 
-numberOfSplits <- 10
-maxN <- 5
+numberOfSplits <- 100
+maxN <- 3
 ngrams <- 1:maxN
-tdm.local.bounds <- c(2,Inf)
+tdm.local.bounds <- c(1,Inf)
 tdm.global.bounds <- c(1,Inf)
 options(mc.cores=8)
 

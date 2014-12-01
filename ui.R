@@ -12,6 +12,11 @@ shinyUI(fluidPage(
   textInput("phrase","Phrase: "),
   tags$style(type='text/css', "#phrase { width: 500px; }")
   ,
-  textOutput("prediction")    
-  )
+  div("Prediction: ",
+  textOutput("prediction",inline=T),
+  uiOutput("probUI",inline = T)
+
+  ))
+
 )
+

@@ -4,10 +4,15 @@ source("predict.R")
 
 dts <- readRDS("dts.rds")
 
+predictions <- data.frame(word=character(0),prob=numeric(0),stringsAsFactors = F)
+
+
 shinyServer(function(input, output) {
 
+
   prediction <- reactive({
-    predictNext(dts,str_trim(input$phrase))
+    predict<-predictNext(dts,str_trim(input$phrase))
+    predict
   })
 
   output$prediction <- renderText({
@@ -16,7 +21,7 @@ shinyServer(function(input, output) {
   })
 
   output$prob <- renderText({
-    paste(" (",prediction()$prob," %  )")
+    paste(" (",prediction()$prob," %  confidence)")
   })
 
   output$probUI <- renderUI({
@@ -30,6 +35,10 @@ shinyServer(function(input, output) {
     uiOutput("prob",inline = T))
   })
 
-
+ output$plot <- renderPlot({
+   predictions[nrow(predictions)+1,] <<-  list(prediction()$word,prediction()$prob)
+   predictions.show <- tail(predictions[! duplicated(predictions),],10)
+   barplot(predictions.show$prob,names.arg = predictions.show$word,main = "Confidence of last 10 predictions")
+ })
 
 })

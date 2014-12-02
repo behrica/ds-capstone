@@ -13,9 +13,10 @@ shinyUI(fluidPage(
   tags$style(type='text/css', "#phrase { width: 500px; }")
   ,
   div("Prediction: ",
-  textOutput("prediction",inline=T),
-  uiOutput("probUI",inline = T)
-
+  strong(textOutput("prediction",inline=T)),
+  uiOutput("probUI",inline = T),
+  p(),
+  plotOutput("plot")
   ))
 
 )

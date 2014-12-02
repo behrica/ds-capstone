@@ -7,6 +7,7 @@
 
 library(shiny)
 
+
 shinyUI(fluidPage(
   titlePanel("Next Word Predictor"),
   textInput("phrase","Phrase: "),

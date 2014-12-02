@@ -14,7 +14,7 @@ predictNextFromWords <- function(dts,words) {
   allMatches.sorted <- allMatches[order(V1,decreasing = T)]
   sum <- sum(allMatches.sorted$V1)
   allMatches.sorted$prob <- allMatches.sorted$V1 / sum
-  print(head(allMatches.sorted))
+  #print(head(allMatches.sorted))
 
   predictedWord <- as.character(allMatches.sorted[1][,by,with=FALSE][[1]])
   if (is.na(predictedWord)) {

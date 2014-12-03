@@ -37,10 +37,7 @@ predictNext <- function(dts,phrase) {
   words <- tokenize(phrase)
   words <- str_trim(words)
   words <- words[words!=""]
-<<<<<<< HEAD
   words <- tail(words,ncol(dts)-2)
   words <- tolower(words)
-=======
->>>>>>> cd67fbaa0a88ed5c2b6ddbf4c910e92a046637e6
   predictNextFromWords(dts,words)
 }

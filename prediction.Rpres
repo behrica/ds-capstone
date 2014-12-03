@@ -1,0 +1,58 @@
+Prediction of next word in a sentence
+========================================================
+author: Carsten Behring
+date: 01/12/2014
+
+Motivation
+========================================================
+ - Typing long sentences is a tedious task for many people
+ - Computers should be able to help us with this
+ - By analyzing what a user has typed so far, it is possible to make predictions about the next word
+
+
+Text parsing
+========================================================
+To predict the next word, analyzing of existing Text corpuses is needed. The following steps were done:
+
+- Use a text corpus of around 100 million words and split it into trigrams
+- Clean text by removing numbers, punctuation, non-ASCII characters
+- Count frequency of every trigram and stores trigrams which occur more then x times in a look up
+- Build efficient look-up table to look up count-by-trigram
+- Restrict table to keep only "frequent trigrams"
+
+
+Prediction algorithm and Demo Application
+========================================================
+- predicts next word by looking up the most frequent occurred trigram based on last two typed words
+- backs off of to bigrams and unigrams, if needed
+- tests with 66000 word test data (different then the input corpus) showed __prediction accuracy of 14 %__
+- The demo application allows to type a word and it shows a prediction after a space
+- For each predicted word the confidence is shown (0 % -> 100 %) and is color coded in "traffic light colors""
+- It shows a plot of prediction confidence for the last 10 words
+
+Demo Application - Confidence plot
+========================================================
+```{r,echo=FALSE}
+source("plotConfidence.R")
+library(ggplot2)
+predictions <- structure(list(word = c("", "have", "not", "not", "not", "great",
+"great", "of", "the", "stash", "stash", "stash", "show", "show",
+"show", "show", "of", "a", "a", "up"), prob = c(0, 6, 11, 11,
+11, 8, 8, 87, 34, 11, 11, 11, 16, 16, 16, 16, 22, 100, 100, 20
+)), .Names = c("word", "prob"), row.names = c(NA, 20L), class = "data.frame")
+createConfidencePlot(predictions)
+```
+
+
+
+Further work
+========================================================
+Increase prediction accuracy by
+- App: Let user select the most likely word or let him choose between the most likely words
+- App: Use typed characters to narrow the possible words, not only full words
+- Variate which n-grams to store (Some tests have shown that this is unlikely to improve accuracy)
+- Investigate other ways to mitigate the problem of long-distance dependencies in natural language
+- Use the text a user is actually typing to constantly improve the n-grams probabilities
+
+
+

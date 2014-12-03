@@ -29,6 +29,7 @@ Prediction algorithm and Demo Application
 - The demo application allows to type a word and it shows a prediction after a space
 - For each predicted word the confidence is shown (0 % -> 100 %) and is color coded in "traffic light colors""
 - It shows a plot of prediction confidence for the last 10 words
+- Link to app: https://efsa.shinyapps.io/capstone/
 
 Demo Application - Confidence plot
 ========================================================
@@ -45,14 +46,16 @@ createConfidencePlot(predictions)
 
 
 
-Further work
+Future work
 ========================================================
-Increase prediction accuracy by
-- App: Let user select the most likely word or let him choose between the most likely words
-- App: Use typed characters to narrow the possible words, not only full words
-- Variate which n-grams to store (Some tests have shown that this is unlikely to improve accuracy)
-- Investigate other ways to mitigate the problem of long-distance dependencies in natural language
+Improve app:
+- Let user select the most likely word or let him choose between the most likely words
+- Use typed characters to narrow the possible words, not only full words
+
+Increase prediction accuracy by:
 - Use the text a user is actually typing to constantly improve the n-grams probabilities
+- Investigate other ways to mitigate the problem of long-distance dependencies in natural language
+- Variate/increase which n-grams to store (Some tests have shown already that this is unlikely to improve accuracy drastically)
 
 
 
